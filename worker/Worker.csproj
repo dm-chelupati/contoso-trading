@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>  <UserSecretsId>6900eaca-7655-4bf0-9526-02e368b52193</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+  </ItemGroup>
+</Project>

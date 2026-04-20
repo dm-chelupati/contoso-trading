@@ -1,0 +1,34 @@
+name: contoso-trading
+metadata:
+  template: contoso-trading@1.0.0
+
+# Multi-service order processing platform
+# Frontend (App Service) → Gateway (Container App) → Order Service → Payment Service → Worker
+# PostgreSQL for data, Service Bus for async processing
+# All services emit telemetry to Log Analytics + App Insights
+
+services:
+  frontend:
+    project: ./frontend
+    language: js
+    host: appservice
+
+  gateway:
+    project: ./gateway
+    language: dotnet
+    host: containerapp
+
+  order-service:
+    project: ./order-service
+    language: dotnet
+    host: containerapp
+
+  payment-service:
+    project: ./payment-service
+    language: dotnet
+    host: containerapp
+
+  worker:
+    project: ./worker
+    language: dotnet
+    host: containerapp
