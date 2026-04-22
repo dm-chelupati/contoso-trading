@@ -6,9 +6,29 @@ param environmentName string
 @description('Primary location')
 param location string = 'eastus2'
 
+@description('Enable Dynatrace OneAgent auto-instrumentation on Container Apps')
+param enableDynatrace bool = false
+
+@description('Dynatrace environment URL (e.g. https://abc12345.live.dynatrace.com)')
+param dtEnvironmentUrl string = ''
+
+@description('Dynatrace API token (for OneAgent communication)')
+@secure()
+param dtApiToken string = ''
+
 var tags = { 'azd-env-name': environmentName }
 var rgName = 'rg-${environmentName}'
 var suffix = uniqueString(subscription().subscriptionId, rgName)
+
+// Dynatrace env vars — injected into every Container App when enabled
+var dtEnvVars = enableDynatrace ? [
+  { name: 'DT_TENANT', value: dtEnvironmentUrl }
+  { name: 'DT_TENANTTOKEN', secretRef: 'dt-api-token' }
+  { name: 'DT_CONNECTION_POINT', value: '${dtEnvironmentUrl}/communication' }
+] : []
+var dtSecrets = enableDynatrace ? [
+  { name: 'dt-api-token', value: dtApiToken }
+] : []
 
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: rgName
@@ -98,6 +118,8 @@ module gateway 'modules/gateway.bicep' = {
     aiConnStr: monitoring.outputs.aiConnStr
     orderServiceUrl: orderService.outputs.url
     paymentServiceUrl: paymentService.outputs.url
+    dtEnvVars: dtEnvVars
+    dtSecrets: dtSecrets
   }
 }
 
@@ -117,6 +139,8 @@ module orderService 'modules/order-service.bicep' = {
     aiConnStr: monitoring.outputs.aiConnStr
     dbConnStr: database.outputs.connStr
     sbName: serviceBus.outputs.sbName
+    dtEnvVars: dtEnvVars
+    dtSecrets: dtSecrets
   }
 }
 
@@ -135,6 +159,8 @@ module paymentService 'modules/payment-service.bicep' = {
     acrPassword: registry.outputs.acrPassword
     aiConnStr: monitoring.outputs.aiConnStr
     dbConnStr: database.outputs.connStr
+    dtEnvVars: dtEnvVars
+    dtSecrets: dtSecrets
   }
 }
 
@@ -154,6 +180,8 @@ module worker 'modules/worker-service.bicep' = {
     aiConnStr: monitoring.outputs.aiConnStr
     dbConnStr: database.outputs.connStr
     sbName: serviceBus.outputs.sbName
+    dtEnvVars: dtEnvVars
+    dtSecrets: dtSecrets
   }
 }
 

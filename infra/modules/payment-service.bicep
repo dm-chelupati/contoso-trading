@@ -8,6 +8,8 @@ param acrName string
 param acrPassword string
 param aiConnStr string
 param dbConnStr string
+param dtEnvVars array = []
+param dtSecrets array = []
 
 resource app 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'payment-svc-${suffix}'
@@ -17,10 +19,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: envId
     configuration: {
-      secrets: [
+      secrets: concat([
         { name: 'acr-password', value: acrPassword }
         { name: 'db-conn', value: dbConnStr }
-      ]
+      ], dtSecrets)
       registries: [
         { server: acrServer, username: acrName, passwordSecretRef: 'acr-password' }
       ]
@@ -32,10 +34,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'payment-service'
           image: 'mcr.microsoft.com/dotnet/samples:aspnetapp'
           resources: { cpu: json('0.5'), memory: '1Gi' }
-          env: [
+          env: concat([
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: aiConnStr }
             { name: 'DATABASE_URL', secretRef: 'db-conn' }
-          ]
+          ], dtEnvVars)
         }
       ]
       scale: { minReplicas: 1, maxReplicas: 3 }
