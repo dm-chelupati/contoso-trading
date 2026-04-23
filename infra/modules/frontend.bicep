@@ -31,6 +31,8 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
     value: aiConnStr }
         { name: 'GATEWAY_URL'
     value: apiUrl }
+        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+    value: 'true' }
       ], empty(dtOtlpEndpoint) ? [] : [
         { name: 'DT_OTLP_ENDPOINT', value: dtOtlpEndpoint }
         { name: 'DT_OTLP_TOKEN', value: dtOtlpToken }
