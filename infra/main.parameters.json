@@ -7,6 +7,15 @@
     },
     "location": {
       "value": "${AZURE_LOCATION}"
+    },
+    "enableDynatrace": {
+      "value": "${enableDynatrace=false}"
+    },
+    "dtEnvironmentUrl": {
+      "value": "${dtEnvironmentUrl=}"
+    },
+    "dtApiToken": {
+      "value": "${dtApiToken=}"
     }
   }
 }
