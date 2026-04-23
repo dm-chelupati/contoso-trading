@@ -1,6 +1,7 @@
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using Azure.Messaging.ServiceBus;
 using Npgsql;
