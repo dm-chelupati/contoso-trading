@@ -12,7 +12,7 @@ param enableDynatrace bool = false
 @description('Dynatrace environment URL (e.g. https://abc12345.live.dynatrace.com)')
 param dtEnvironmentUrl string = ''
 
-@description('Dynatrace API token (for OneAgent communication)')
+@description('Dynatrace API token (needs openTelemetryTrace.ingest + metrics.ingest + logs.ingest scopes)')
 @secure()
 param dtApiToken string = ''
 
@@ -20,11 +20,10 @@ var tags = { 'azd-env-name': environmentName }
 var rgName = 'rg-${environmentName}'
 var suffix = uniqueString(subscription().subscriptionId, rgName)
 
-// Dynatrace env vars — injected into every Container App when enabled
+// Dynatrace OTLP env vars — injected into every Container App when enabled
 var dtEnvVars = enableDynatrace ? [
-  { name: 'DT_TENANT', value: dtEnvironmentUrl }
-  { name: 'DT_TENANTTOKEN', secretRef: 'dt-api-token' }
-  { name: 'DT_CONNECTION_POINT', value: '${dtEnvironmentUrl}/communication' }
+  { name: 'DT_OTLP_ENDPOINT', value: '${dtEnvironmentUrl}/api/v2/otlp' }
+  { name: 'DT_OTLP_TOKEN', secretRef: 'dt-api-token' }
 ] : []
 var dtSecrets = enableDynatrace ? [
   { name: 'dt-api-token', value: dtApiToken }
@@ -99,7 +98,7 @@ module frontend 'modules/frontend.bicep' = {
     tags: tags
     aiConnStr: monitoring.outputs.aiConnStr
     apiUrl: gateway.outputs.url
-    dtOtlpEndpoint: enableDynatrace ? '${dtEnvironmentUrl}/api/v2/otlp/v1/traces' : ''
+    dtOtlpEndpoint: enableDynatrace ? '${dtEnvironmentUrl}/api/v2/otlp' : ''
     dtOtlpToken: enableDynatrace ? dtApiToken : ''
   }
 }
