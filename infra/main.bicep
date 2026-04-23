@@ -99,6 +99,8 @@ module frontend 'modules/frontend.bicep' = {
     tags: tags
     aiConnStr: monitoring.outputs.aiConnStr
     apiUrl: gateway.outputs.url
+    dtOtlpEndpoint: enableDynatrace ? '${dtEnvironmentUrl}/api/v2/otlp/v1/traces' : ''
+    dtOtlpToken: enableDynatrace ? dtApiToken : ''
   }
 }
 

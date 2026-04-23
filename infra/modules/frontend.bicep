@@ -3,6 +3,8 @@ param suffix string
 param tags object
 param aiConnStr string
 param apiUrl string
+param dtOtlpEndpoint string = ''
+param dtOtlpToken string = ''
 
 resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'plan-${suffix}'
@@ -23,13 +25,16 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       linuxFxVersion: 'NODE|20-lts'
       healthCheckPath: '/health'
-      appCommandLine: 'node server.js'
-      appSettings: [
+      appCommandLine: 'node -r ./tracing.js server.js'
+      appSettings: concat([
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
     value: aiConnStr }
         { name: 'GATEWAY_URL'
     value: apiUrl }
-      ]
+      ], empty(dtOtlpEndpoint) ? [] : [
+        { name: 'DT_OTLP_ENDPOINT', value: dtOtlpEndpoint }
+        { name: 'DT_OTLP_TOKEN', value: dtOtlpToken }
+      ])
     }
   }
 }
