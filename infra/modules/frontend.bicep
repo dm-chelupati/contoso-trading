@@ -22,6 +22,7 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
   kind: 'app,linux'
   properties: {
     serverFarmId: plan.id
+    publicNetworkAccess: 'Enabled'
     siteConfig: {
       linuxFxVersion: 'NODE|20-lts'
       healthCheckPath: '/health'
