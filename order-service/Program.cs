@@ -41,6 +41,7 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 }
 
 var app = builder.Build();
+var logger = app.Logger;
 
 var dbConn = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
 var sbConn = Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION") ?? "";
@@ -60,6 +61,7 @@ app.MapGet("/orders", async () =>
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "Database error on GET /orders: {ErrorMessage}", ex.Message);
         return Results.Problem($"Database error: {ex.Message}", statusCode: 500);
     }
 });
@@ -79,6 +81,7 @@ app.MapPost("/orders", async () =>
     }
     catch (Exception ex)
     {
+        logger.LogError(ex, "Queue error on POST /orders: {ErrorMessage}", ex.Message);
         return Results.Problem($"Queue error: {ex.Message}", statusCode: 500);
     }
 });
