@@ -5,32 +5,36 @@ Update this file with your service entity IDs from Dynatrace.
 
 | Service | Entity ID | Display Name |
 |---------|-----------|-------------|
-| EDIT_ME | SERVICE-XXXXXXXXXXXXXXXX | your-service |
+| frontend | SERVICE-D41D10F471E5CCC2 | nginx frontend-* on port 3000 |
+| gateway | SERVICE-1841B6C0EC3A3659 | gateway |
+| order-service | SERVICE-98A1541771EE582C | order-service |
+| payment-service | SERVICE-4F0A69343E18903B | payment-service |
+| worker | SERVICE-3895AA8548E9AE53 | worker |
 
 ## Verified DQL Queries
 
 ### Get error spans (last 2 hours)
 ```dql
 fetch spans, from:now()-2h
-| filter dt.entity.service == "SERVICE-XXXXXXXXXXXXXXXX"
-| filter http.response.status_code >= 500
-| sort timestamp desc
+| filter service.id == "SERVICE-XXXXXXXXXXXXXXXX"
+| filter isNotNull(http.response.status_code) and http.response.status_code >= 500
+| sort start_time desc
 | limit 20
-| fields timestamp, span.name, http.request.method, http.response.status_code, trace_id
+| fields start_time, span.name, http.request.method, http.response.status_code, trace_id
 ```
 
 ### Error rate timeseries
 ```dql
 fetch spans, from:now()-2h
-| filter dt.entity.service == "SERVICE-XXXXXXXXXXXXXXXX"
-| summarize total=count(), errors=countIf(http.response.status_code >= 500), by:{bin(timestamp, 5m)}
-| sort timestamp asc
+| filter service.id == "SERVICE-XXXXXXXXXXXXXXXX"
+| makeTimeseries interval:5m, { total=count(), errors=countIf(isNotNull(http.response.status_code) and http.response.status_code >= 500) }
+| sort timeframe[start]
 ```
 
 ### Logs for a service
 ```dql
 fetch logs, from:now()-2h
-| filter dt.entity.service == "SERVICE-XXXXXXXXXXXXXXXX"
+| filter service.id == "SERVICE-XXXXXXXXXXXXXXXX"
 | filter loglevel == "ERROR"
 | sort timestamp desc
 | limit 20
@@ -41,6 +45,6 @@ fetch logs, from:now()-2h
 - ALWAYS use `countIf(condition)` — NEVER use `sum(if(condition, 1, 0))`
 - Time range: `fetch spans, from:now()-2h`
 - HTTP status: `http.response.status_code`
-- Service filter: `dt.entity.service == "SERVICE-XXXXX"`
-- Time bucketing: `by:{bin(timestamp, 5m)}`
+- Service filter: `service.id == "SERVICE-XXXXX"`
+- Time bucketing: `makeTimeseries interval:5m, {total=count(), errors=countIf(...)}` then `sort timeframe[start]`
 
