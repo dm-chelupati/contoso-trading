@@ -194,3 +194,4 @@ output GATEWAY_URL string = gateway.outputs.url
 output AI_NAME string = monitoring.outputs.aiName
 output ACR_NAME string = registry.outputs.acrName
 output ACR_LOGIN_SERVER string = registry.outputs.acrLoginServer
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.acrLoginServer
