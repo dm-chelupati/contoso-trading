@@ -2,6 +2,17 @@ param location string
 param suffix string
 param tags object
 
+// WARNING: The admin password is derived from uniqueString() and baked into the
+// Container App secret at deploy time. If the password is rotated manually on the
+// PostgreSQL server, every dependent Container App secret must be updated and a new
+// revision created — otherwise services will fail with 28P01 (auth failed).
+//
+// TODO: Migrate to Azure Key Vault for credential storage so that:
+//   1. Passwords are never in Bicep / source control.
+//   2. Key Vault secret rotation + Container App Key Vault references keep
+//      credentials in sync automatically.
+//   See: https://learn.microsoft.com/azure/container-apps/manage-secrets
+
 resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' = {
   name: 'pg-${suffix}'
   location: location
