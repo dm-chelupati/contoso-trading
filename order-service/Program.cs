@@ -43,21 +43,79 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 var app = builder.Build();
 var logger = app.Logger;
 
-var dbConn = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
 var sbConn = Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION") ?? "";
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "order-service" }));
+// Read DATABASE_URL per-request so a container restart after secret update takes effect immediately.
+string GetDatabaseUrl() => Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
+
+// Open a Npgsql connection with retry + exponential back-off.
+async Task<NpgsqlConnection> OpenConnectionWithRetryAsync(string connectionString, int maxRetries = 3)
+{
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+        try
+        {
+            var conn = new NpgsqlConnection(connectionString);
+            await conn.OpenAsync();
+            return conn;
+        }
+        catch (NpgsqlException ex) when (attempt < maxRetries)
+        {
+            var delay = attempt * 500;
+            logger.LogWarning(ex,
+                "Database connection attempt {Attempt}/{MaxRetries} failed (SqlState={SqlState}): {Error}. Retrying in {Delay}ms...",
+                attempt, maxRetries, ex.SqlState, ex.Message, delay);
+            await Task.Delay(delay);
+        }
+    }
+    // Final attempt — let the exception propagate.
+    var final = new NpgsqlConnection(connectionString);
+    await final.OpenAsync();
+    return final;
+}
+
+app.MapGet("/health", async () =>
+{
+    var dbUrl = GetDatabaseUrl();
+    if (string.IsNullOrEmpty(dbUrl))
+        return Results.Ok(new { status = "healthy", service = "order-service", database = "not-configured" });
+
+    try
+    {
+        await using var conn = new NpgsqlConnection(dbUrl);
+        await conn.OpenAsync();
+        return Results.Ok(new { status = "healthy", service = "order-service", database = "connected" });
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Health check: database connectivity failed: {ErrorMessage}", ex.Message);
+        return Results.Json(
+            new { status = "degraded", service = "order-service", database = "disconnected", error = ex.Message },
+            statusCode: 503);
+    }
+});
 
 app.MapGet("/orders", async () =>
 {
     try
     {
-        if (string.IsNullOrEmpty(dbConn))
+        var dbUrl = GetDatabaseUrl();
+        if (string.IsNullOrEmpty(dbUrl))
             return Results.Ok(new { orders = new[] { new { id = 1, item = "Mock Order", status = "pending" } }, source = "mock" });
 
-        await using var conn = new NpgsqlConnection(dbConn);
-        await conn.OpenAsync();
+        await using var conn = await OpenConnectionWithRetryAsync(dbUrl);
         return Results.Ok(new { orders = new[] { new { id = 1, item = "DB Order", status = "active" } }, source = "database" });
+    }
+    catch (NpgsqlException ex) when (ex.SqlState == "28P01" || ex.SqlState == "28000")
+    {
+        logger.LogError(ex,
+            "Database authentication failed on GET /orders. "
+            + "This typically occurs after a password rotation when the container app secret has not been updated. "
+            + "SqlState={SqlState}, Error={ErrorMessage}",
+            ex.SqlState, ex.Message);
+        return Results.Problem(
+            "Database authentication failed. The database credential may be stale after a recent password rotation.",
+            statusCode: 500);
     }
     catch (Exception ex)
     {
