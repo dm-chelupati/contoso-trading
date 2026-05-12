@@ -42,7 +42,11 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 
 var app = builder.Build();
 var logger = app.Logger;
-
+app.Use(async (context, next) =>
+{
+    logger.LogInformation("Request: {Method} {Path}", context.Request.Method, context.Request.Path);
+    await next();
+});
 var dbConn = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
 var sbConn = Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION") ?? "";
 
