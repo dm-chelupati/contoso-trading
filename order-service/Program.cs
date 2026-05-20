@@ -47,7 +47,7 @@ app.Use(async (context, next) =>
     logger.LogInformation("Request: {Method} {Path}", context.Request.Method, context.Request.Path);
     await next();
 });
-var dbConn = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
+var dbConn = Environment.GetEnvironmentVariable("DATABASE_CONN_STRING") ?? "";
 var sbConn = Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION") ?? "";
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "order-service" }));
