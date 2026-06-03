@@ -40,8 +40,19 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 builder.Services.AddHttpClient();
 var app = builder.Build();
 
-var orderUrl = Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "http://localhost:8081";
-var paymentUrl = Environment.GetEnvironmentVariable("PAYMENT_SERVICE_URL") ?? "http://localhost:8082";
+// Sanitise service URLs to the origin (scheme + host + port) so that
+// accidental path suffixes such as "/wrong-path" never reach downstream services.
+static string SanitiseServiceUrl(string raw)
+{
+    if (Uri.TryCreate(raw, UriKind.Absolute, out var uri))
+        return uri.GetLeftPart(UriPartial.Authority);
+    return raw.TrimEnd('/');
+}
+
+var orderUrl = SanitiseServiceUrl(
+    Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "http://localhost:8081");
+var paymentUrl = SanitiseServiceUrl(
+    Environment.GetEnvironmentVariable("PAYMENT_SERVICE_URL") ?? "http://localhost:8082");
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "gateway" }));
 
