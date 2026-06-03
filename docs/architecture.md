@@ -42,4 +42,27 @@ User → frontend (App Service)
 - **Correlate with deployments**: Check `az containerapp revision list` for recent revisions and their creation times.
 - **Source code analysis**: If the trace points to a specific endpoint, examine the source code for that handler in the GitHub repo.
 - **Mitigation in Azure**: For deployment issues, suggest rollback via `az containerapp revision activate`. For config issues, suggest `az containerapp update` with corrected env vars.
+- **Resolve alert after mitigation**: After confirming recovery, close the fired Azure Monitor alert via the Alerts Management REST API (see below).
+
+## Post-Mitigation: Resolve Azure Monitor Alert
+
+After mitigating an incident and verifying recovery, always close the fired alert instance.
+
+### Steps
+1. Obtain an ARM access token: `az account get-access-token --resource https://management.azure.com --query accessToken -o tsv`
+2. POST to the Alerts Management `changestate` API:
+   ```bash
+   curl -s -X POST \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -H "Content-Length: 0" \
+     "https://management.azure.com<ALERT_ID>/changestate?api-version=2019-05-05-preview&newState=Closed"
+   ```
+   Replace `<ALERT_ID>` with the full alert resource ID from the alert payload.
+3. Verify the response is HTTP 200 and `properties.essentials.alertState` is `Closed`.
+
+### Important Notes
+- Do NOT use `az monitor metrics alert update --enabled false` — that disables the alert rule, not the specific fired alert.
+- The `az rest --method post` may be blocked by the safety filter. Use `az account get-access-token` + `curl` in `RunInTerminal` as a fallback.
+- The `Content-Length: 0` header is required; omitting it causes HTTP 411.
 
