@@ -51,9 +51,8 @@ app.MapGet("/api/orders", async (IHttpClientFactory http) =>
     {
         var client = http.CreateClient();
         var response = await client.GetAsync($"{orderUrl}/orders");
-        response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadAsStringAsync();
-        return Results.Content(body, "application/json");
+        return Results.Text(body, "application/json", statusCode: (int)response.StatusCode);
     }
     catch (Exception ex)
     {
