@@ -46,17 +46,22 @@ var logger = app.Logger;
 var dbConn = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "";
 var sbConn = Environment.GetEnvironmentVariable("SERVICEBUS_CONNECTION") ?? "";
 
+// Use NpgsqlDataSource for built-in connection pooling instead of creating
+// a new NpgsqlConnection per request (prevents PostgreSQL 53300 exhaustion).
+NpgsqlDataSource? dbDataSource = !string.IsNullOrEmpty(dbConn)
+    ? NpgsqlDataSource.Create(dbConn)
+    : null;
+
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "order-service" }));
 
 app.MapGet("/orders", async () =>
 {
     try
     {
-        if (string.IsNullOrEmpty(dbConn))
+        if (dbDataSource is null)
             return Results.Ok(new { orders = new[] { new { id = 1, item = "Mock Order", status = "pending" } }, source = "mock" });
 
-        await using var conn = new NpgsqlConnection(dbConn);
-        await conn.OpenAsync();
+        await using var conn = await dbDataSource.OpenConnectionAsync();
         return Results.Ok(new { orders = new[] { new { id = 1, item = "DB Order", status = "active" } }, source = "database" });
     }
     catch (Exception ex)
