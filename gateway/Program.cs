@@ -41,6 +41,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("orders", client =>
 {
     client.Timeout = TimeSpan.FromMilliseconds(500);
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 });
 var app = builder.Build();
 
