@@ -38,6 +38,11 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 }
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("orders", client =>
+{
+    client.Timeout = TimeSpan.FromMilliseconds(300);
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
 var app = builder.Build();
 
 var orderUrl = Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "http://localhost:8081";
@@ -49,7 +54,7 @@ app.MapGet("/api/orders", async (IHttpClientFactory http) =>
 {
     try
     {
-        var client = http.CreateClient();
+        var client = http.CreateClient("orders");
         var response = await client.GetAsync($"{orderUrl}/orders");
         var body = await response.Content.ReadAsStringAsync();
         return Results.Text(body, "application/json", statusCode: (int)response.StatusCode);
