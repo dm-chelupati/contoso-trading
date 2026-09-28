@@ -8,7 +8,7 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' =
   name: 'pg-${suffix}'
   location: location
   tags: tags
-  sku: { name: 'Standard_B1ms'
+  sku: { name: 'Standard_B2s'
     tier: 'Burstable' }
   properties: {
     version: '15'
@@ -18,6 +18,15 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' =
     network: {
       publicNetworkAccess: !empty(peSubnetId) ? 'Disabled' : 'Enabled'
     }
+  }
+}
+
+resource queryStoreConfig 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2023-12-01-preview' = {
+  parent: server
+  name: 'pg_qs.query_capture_mode'
+  properties: {
+    value: 'top'
+    source: 'user-override'
   }
 }
 
