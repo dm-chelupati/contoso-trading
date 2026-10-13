@@ -123,6 +123,12 @@ When VNet is enabled, Azure Firewall provides:
 | Service Bus | Standard tier | Async order processing pipeline |
 | Monitoring | Log Analytics + App Insights | Telemetry from all services |
 
+### Gateway configuration
+
+| Variable | Default | Valid range | Purpose |
+|----------|---------|-------------|---------|
+| `BACKEND_TIMEOUT_SECONDS` | `10` | `1`–`120` seconds | Bounds gateway calls to order and payment services. Missing, non-numeric, and non-positive values use the default; larger values are capped at 120 seconds. |
+
 ## Deploy
 
 ### Standard (public endpoints)
