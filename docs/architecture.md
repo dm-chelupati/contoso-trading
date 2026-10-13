@@ -28,6 +28,7 @@ User → frontend (App Service)
 ### 5xx Errors
 - **Payment gateway timeout (504)**: payment-service has a 5% simulated failure rate. If you see sustained 504s, check if the rate exceeds baseline.
 - **Database connection failures**: PostgreSQL connection pool exhaustion under load. Check `DATABASE_URL` connectivity and connection count.
+- **PostgreSQL server stopped/unavailable**: `Failed to connect to <ip>:5432` timeouts, gateway `/api/orders` 500 and `/api/payments` 502 while `/health` stays 200. See [runbooks/postgres-availability.md](runbooks/postgres-availability.md).
 - **Service Bus failures**: If worker can't connect to Service Bus, orders queue up. Check SERVICEBUS_CONNECTION env var.
 - **OOM kills**: Container Apps have memory limits. Check restart count and memory metrics.
 
