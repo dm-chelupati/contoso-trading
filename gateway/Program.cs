@@ -37,18 +37,23 @@ if (!string.IsNullOrEmpty(dtEndpoint))
     });
 }
 
+const int defaultBackendTimeoutSeconds = 10;
+const int maxBackendTimeoutSeconds = 120;
 var backendTimeoutSeconds = int.TryParse(
     Environment.GetEnvironmentVariable("BACKEND_TIMEOUT_SECONDS"),
     out var configuredTimeoutSeconds)
     && configuredTimeoutSeconds > 0
-        ? configuredTimeoutSeconds
-        : 10;
+        ? Math.Min(configuredTimeoutSeconds, maxBackendTimeoutSeconds)
+        : defaultBackendTimeoutSeconds;
 
 builder.Services.AddHttpClient("backend", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(backendTimeoutSeconds);
 });
 var app = builder.Build();
+app.Logger.LogInformation(
+    "Gateway backend timeout configured to {BackendTimeoutSeconds} seconds",
+    backendTimeoutSeconds);
 var logger = app.Logger;
 
 var orderUrl = Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "http://localhost:8081";
