@@ -37,7 +37,10 @@ if (!string.IsNullOrEmpty(dtEndpoint))
     });
 }
 
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("backend", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 var app = builder.Build();
 var logger = app.Logger;
 
@@ -50,7 +53,7 @@ app.MapGet("/api/orders", async (IHttpClientFactory http) =>
 {
     try
     {
-        var client = http.CreateClient();
+        var client = http.CreateClient("backend");
         var response = await client.GetAsync($"{orderUrl}/orders");
         var body = await response.Content.ReadAsStringAsync();
         return Results.Text(body, "application/json", statusCode: (int)response.StatusCode);
@@ -66,7 +69,7 @@ app.MapGet("/api/payments", async (IHttpClientFactory http) =>
 {
     try
     {
-        var client = http.CreateClient();
+        var client = http.CreateClient("backend");
         var response = await client.GetAsync($"{paymentUrl}/payments");
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadAsStringAsync();
