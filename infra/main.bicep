@@ -103,6 +103,15 @@ module database 'modules/database.bicep' = {
     vnetId: enableVnet ? vnet.outputs.vnetId : '' }
 }
 
+// ── Database availability alerting (is_db_alive metric; alerting only, no auto-restart) ──
+
+module postgresAlerts 'modules/postgres-alerts.bicep' = {
+  name: 'postgres-alerts'
+  scope: rg
+  params: { serverName: database.outputs.serverName
+    tags: tags }
+}
+
 // ── Container App Environment (shared by all backend services) ──
 
 module containerEnv 'modules/container-env.bicep' = {
