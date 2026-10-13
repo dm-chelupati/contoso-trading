@@ -37,8 +37,24 @@ if (!string.IsNullOrEmpty(dtEndpoint))
     });
 }
 
-builder.Services.AddHttpClient();
+const int defaultBackendTimeoutSeconds = 10;
+const int maxBackendTimeoutSeconds = 120;
+const string backendTimeoutEnvironmentVariable = "BACKEND_TIMEOUT_SECONDS";
+var backendTimeoutSeconds = int.TryParse(
+    Environment.GetEnvironmentVariable(backendTimeoutEnvironmentVariable),
+    out var configuredTimeoutSeconds)
+    && configuredTimeoutSeconds > 0
+        ? Math.Min(configuredTimeoutSeconds, maxBackendTimeoutSeconds)
+        : defaultBackendTimeoutSeconds;
+
+builder.Services.AddHttpClient("backend", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(backendTimeoutSeconds);
+});
 var app = builder.Build();
+app.Logger.LogInformation(
+    "Gateway backend timeout configured to {BackendTimeoutSeconds} seconds",
+    backendTimeoutSeconds);
 var logger = app.Logger;
 
 var orderUrl = Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "http://localhost:8081";
@@ -50,7 +66,7 @@ app.MapGet("/api/orders", async (IHttpClientFactory http) =>
 {
     try
     {
-        var client = http.CreateClient();
+        var client = http.CreateClient("backend");
         var response = await client.GetAsync($"{orderUrl}/orders");
         var body = await response.Content.ReadAsStringAsync();
         return Results.Text(body, "application/json", statusCode: (int)response.StatusCode);
@@ -66,7 +82,7 @@ app.MapGet("/api/payments", async (IHttpClientFactory http) =>
 {
     try
     {
-        var client = http.CreateClient();
+        var client = http.CreateClient("backend");
         var response = await client.GetAsync($"{paymentUrl}/payments");
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadAsStringAsync();
