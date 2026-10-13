@@ -37,9 +37,16 @@ if (!string.IsNullOrEmpty(dtEndpoint))
     });
 }
 
+var backendTimeoutSeconds = int.TryParse(
+    Environment.GetEnvironmentVariable("BACKEND_TIMEOUT_SECONDS"),
+    out var configuredTimeoutSeconds)
+    && configuredTimeoutSeconds > 0
+        ? configuredTimeoutSeconds
+        : 10;
+
 builder.Services.AddHttpClient("backend", client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(backendTimeoutSeconds);
 });
 var app = builder.Build();
 var logger = app.Logger;
