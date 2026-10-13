@@ -39,8 +39,9 @@ if (!string.IsNullOrEmpty(dtEndpoint))
 
 const int defaultBackendTimeoutSeconds = 10;
 const int maxBackendTimeoutSeconds = 120;
+const string backendTimeoutEnvironmentVariable = "BACKEND_TIMEOUT_SECONDS";
 var backendTimeoutSeconds = int.TryParse(
-    Environment.GetEnvironmentVariable("BACKEND_TIMEOUT_SECONDS"),
+    Environment.GetEnvironmentVariable(backendTimeoutEnvironmentVariable),
     out var configuredTimeoutSeconds)
     && configuredTimeoutSeconds > 0
         ? Math.Min(configuredTimeoutSeconds, maxBackendTimeoutSeconds)
